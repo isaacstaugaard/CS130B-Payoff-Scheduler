@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+import collections
+import bisect
+import sys
+
+class Interval(object):
+    def __init__(self, start, finish, weight):
+        self.start = int(start)
+        self.finish = int(finish)
+        self.weight = int(weight)
+
+
+
+def previousIntervals(I):
+    startArray = [i.start for i in I]
+    finishArray = [i.finish for i in I]
+    p = []
+    for j in xrange(len(I)):
+        i = bisect.bisect_right(finishArray, startArray[j]) - 1
+        p.append(i)
+    return p
+
+def optimizedWeighted(I):
+    I.sort(lambda x, y: x.finish - y.finish)
+    p = previousIntervals(I)
+    OPT = collections.defaultdict(int)
+    OPT[-1] = 0
+    OPT[0] = I[0].weight
+    for j in xrange(1, len(I)):
+        OPT[j] = max(I[j].weight + OPT[p[j]], OPT[j - 1])
+    OptimalArray = []
+
+    def computeSolution(s):
+        stack = [s]
+        while stack:
+            s = stack.pop()
+            if s >= 0:
+                if I[s].weight + OPT[p[s]] > OPT[s - 1]:
+                    OptimalArray.append(I[s])
+                    stack.append(p[s])
+                else:
+                    stack.append(s-1) 
+                    
+    computeSolution(len(I) - 1)
+    OptimalArray.sort(lambda x, y: x.finish - y.finish)
+    return OptimalArray
+    
+if __name__ == '__main__':
+    I = []
+
+    line = sys.stdin.readline()
+    while line:       
+        lst = map(int, line.split())
+        if lst[0] < 0:
+            print "Bad input: start time cannot be negative"
+            print "Displaying max payoff for the previous inputs"
+            break
+        if lst[1] <= lst[0]:
+            print "Bad input: finish time was not later than start time"
+            print "Displaying max payoff for the previous inputs"
+            break
+        if lst[2] < 0:
+            print "Bad input: The weight cannot be negative"
+            print "Displaying max payoff for the previous inputs"
+            break
+        I.append(Interval(lst[0], lst[1], lst[2]))
+        line = sys.stdin.readline()
+        
+    O = optimizedWeighted(I)
+    
+    payoff = 0
+    i = 0
+    j = 0
+    while i < len(O):
+        payoff = payoff + O[i].weight
+        i = i + 1
+    print "Maximum Payoff: %i" % payoff
+    while j < len(O):
+        print O[j].start, O[j].finish, O[j].weight
+        j = j + 1
+
+
